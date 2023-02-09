@@ -1,6 +1,6 @@
-#User Story Ancestor Grid
+#Feature Ancestor Grid
 
-![ScreenShot](/images/user-story-ancestor-grid.png)
+![ScreenShot](/images/feature-ancestor-grid.png)
 
 Custom List for User Stories that automatically shows all ancestors for each user story.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
 
@@ -110,5 +110,5 @@ pageOid and panelOid lines to install in a new place.  CAUTION:  Currently, erro
 Run this to watch files (js and css).  When a file is saved, the task will automatically build and deploy as shown in the deploy section above.
 
 =======
-# user-story-ancestor-grid
+# feature-ancestor-grid
 Custom list that shows user stories and their ancestors

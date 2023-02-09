@@ -1,11 +1,11 @@
-Ext.define("user-story-ancestor-grid", {
+Ext.define("feature-ancestor-grid", {
     extend: 'Rally.app.App',
     componentCls: 'app',
     logger: new Rally.technicalservices.Logger(),
     defaults: { margin: 10 },
 
     integrationHeaders : {
-        name : "user-story-ancestor-grid"
+        name : "feature-ancestor-grid"
     },
 
     config: {
@@ -15,6 +15,7 @@ Ext.define("user-story-ancestor-grid", {
     },
 
     launch: function() {
+        // this.logger.log('LAUNCH APPLICATION');
         this.fetchPortfolioItemTypes().then({
             success: this.initializeApp,
             failure: this.showErrorNotification,
@@ -22,46 +23,57 @@ Ext.define("user-story-ancestor-grid", {
         });
 
     },
+
     showErrorNotification: function(msg){
         Rally.ui.notify.Notifier.showError({
             message: msg
         });
     },
+
     initializeApp: function(portfolioTypes){
         this.portfolioItemTypeDefs = Ext.Array.map(portfolioTypes, function(p){ return p.getData();});
+        this.portfolioItemTypeDefs.shift();  // remove the first level portfolio item type from the list
+        // this.logger.log('initalizeApp(), portfolioItemTypeDefs= ', this.portfolioItemTypeDefs);
         this._buildGridboardStore();
+        // this.logger.log('END initializeApp(): this.piAncestorHash= ', this.piAncestorHash);
     },
-    getFeatureName: function(){
-        return this.getFeatureTypePath().replace('PortfolioItem/','');
+
+    getpiName: function(){
+        return this.getPITypePath().replace('PortfolioItem/','');
     },
-    getFeatureTypePath: function(){
+
+    getPITypePath: function(){
         return this.portfolioItemTypeDefs[0].TypePath;
-        //return 'PortfolioItem/Feature';
     },
+
     getPortfolioItemTypePaths: function(){
         return _.pluck(this.portfolioItemTypeDefs, 'TypePath');
     },
+
     fetchPortfolioItemTypes: function(){
         return this.fetchWsapiRecords({
             model: 'TypeDefinition',
             fetch: ['TypePath', 'Ordinal','Name'],
             context: {workspace: this.getContext().getWorkspace()._ref},
-            filters: [{
-                property: 'Parent.Name',
-                operator: '=',
-                value: 'Portfolio Item'
-            },
+            filters: [
+                {
+                    property: 'Parent.Name',
+                    operator: '=',
+                    value: 'Portfolio Item'
+                },
                 {
                     property: 'Creatable',
                     operator: '=',
                     value: 'true'
-                }],
+                }
+            ],
             sorters: [{
                 property: 'Ordinal',
                 direction: 'ASC'
             }]
         });
     },
+
     fetchSnapshots: function(config){
         var deferred = Ext.create('Deft.Deferred');
 
@@ -77,23 +89,26 @@ Ext.define("user-story-ancestor-grid", {
 
         return deferred;
     },
+
     getQueryFilter: function(){
         var query = this.getSetting('query');
         if (query && query.length > 0){
-            this.logger.log('getQueryFilter', Rally.data.wsapi.Filter.fromQueryString(query));
+            // this.logger.log('getQueryFilter', Rally.data.wsapi.Filter.fromQueryString(query));
             return Rally.data.wsapi.Filter.fromQueryString(query);
         }
         return [];
     },
+
     _buildGridboardStore: function(){
-        this.logger.log('_buildGridboardStore');
+        // this.logger.log('START _buildGridboardStore');
         this.removeAll();
 
         Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
             models: this.getModelNames(),
             // autoLoad: true,
             enableHierarchy: true,
-            fetch: [this.getFeatureName(),'ObjectID'],
+            //fetch: [this.getpiName(),'ObjectID'],
+            fetch: ['Parent','ObjectID'],
             filters: this.getQueryFilter()
         }).then({
             success: this._addGridboard,
@@ -101,30 +116,49 @@ Ext.define("user-story-ancestor-grid", {
             scope: this
         });
     },
+
     getModelNames: function(){
-        return ['HierarchicalRequirement'];
+        return ['portfolioitem/feature'];  // **** HARD CODED ****
     },
-    getFeatureAncestorHash: function(){
-        if (!this.featureAncestorHash){
-            this.featureAncestorHash = {};
+
+getpiAncestorHash: function(){
+    // this.logger.log('START getpiAncestorHash(): ', this.piAncestorHash);  // value is "undefined"
+        if (!this.piAncestorHash){
+            this.piAncestorHash = {};
         }
-        return this.featureAncestorHash;
+        // this.logger.log('getpiAncestorHash() returns: ', this.piAncestorHash);  // RETURNS EMPTY - SHOULD BE LIST OF INITIATIVES
+        return this.piAncestorHash;
     },
+
     setAncestors: function(records){
-        var featureHash = this.getFeatureAncestorHash(),
-            featureName = this.getFeatureName();
+    // this.logger.log('START setAncestors()');
+        var piHash = this.getpiAncestorHash();
+            // piName = this.getpiName();
+
+        // this.logger.log('setAncestors(): records= ', records, 'piHash = ',piHash);
 
         for (var j=0; j<records.length; j++){
             var record = records[j],
-                feature = record.get(featureName);
-            if (feature){
-                var objID = feature.ObjectID;
-                var featureObj = featureHash[objID];
-                for (var i=1; i<this.portfolioItemTypeDefs.length; i++){
-                    var name = this.portfolioItemTypeDefs[i].TypePath.toLowerCase().replace('portfolioitem/','');
+                pi = record.get('Parent');
 
-                    if (featureObj && featureObj[name]){
-                        record.set(name, featureObj[name]);
+            // this.logger.log('setAncestors() loop1: j=', j, 'record = ', record, 'parent = ', pi);
+            // GETTING A GOOD RECORD (feature) and PARENT (initiative) at this point...
+
+            if (pi){
+                var objID = pi.ObjectID;
+                var piObj = piHash[objID];
+                // this.logger.log('setAncestors() line 150: objID =', objID, ' piObj =', piObj);
+
+                var name = this.portfolioItemTypeDefs[0].TypePath.toLowerCase().replace('portfolioitem/','');
+                record.set(name, pi);
+                // this.logger.log('setAncestors() line 153 RECORD SET: name = ', name, 'pi= ', pi);
+
+                for (var i=1; i<this.portfolioItemTypeDefs.length; i++){
+                    name = this.portfolioItemTypeDefs[i].TypePath.toLowerCase().replace('portfolioitem/','');
+                    // this.logger.log('setAncestors() line 154: i=', i, 'name = ', name, 'piObj= ', piObj, 'piObj[name]=', piObj[name]);
+                    if (piObj && piObj[name]){
+                        record.set(name, piObj[name]);
+                        // this.logger.log('setAncestors() line 160 RECORD SET: name = ', name, 'piObj[name] = ', piObj[name]);
                     } else {
                         record.set(name, null);
                     }
@@ -133,44 +167,48 @@ Ext.define("user-story-ancestor-grid", {
         }
     },
 
-    updateFeatureHashWithWsapiRecords: function(results){
-
+    updateHashWithWsapiRecords: function(results){
+        // this.logger.log('START updateHashWithWsapiRecords()', results);
         var hash = {},
-            features = [],
-            featureTypePath = this.getPortfolioItemTypePaths()[0].toLowerCase(),
+            pis = [],
+            piTypePath = this.getPortfolioItemTypePaths()[0].toLowerCase(),
             ancestorNames = _.map(this.getPortfolioItemTypePaths(), function(pi){
-                return pi.toLowerCase().replace('portfolioitem/','');
+               return pi.toLowerCase().replace('portfolioitem/','');
             });
+        // ancestorNames = ['initiative', 'theme'];
+
+        // this.logger.log('updateHashWithWsapiRecords(); piTypePath= ',piTypePath,'ancestorNames= ',ancestorNames);
 
         Ext.Array.each(results, function(res){
             Ext.Array.each(res, function(pi){
                 hash[pi.get('ObjectID')] = pi.getData();
-                if (pi.get('_type') === featureTypePath){
-                    features.push(pi);
+                if (pi.get('_type') === piTypePath){
+                    pis.push(pi);
                 }
             });
         });
 
-        this.logger.log('updateFeatureHashWithWsapiRecords', ancestorNames, results);
-        var featureHash = this.getFeatureAncestorHash();
-        Ext.Array.each(features, function(s){
+        // this.logger.log('updateHashWithWsapiRecords(); results= ', results);
+
+        var piHash = this.getpiAncestorHash();
+        Ext.Array.each(pis, function(s){
 
             var parent = s.get('Parent') && s.get('Parent').ObjectID || null,
                 objID = s.get('ObjectID');
 
-            if (!featureHash[objID]){
-                featureHash[objID] = hash[objID];
+            if (!piHash[objID]){
+                piHash[objID] = hash[objID];
                 //initialize
-                Ext.Array.each(ancestorNames, function(a){ featureHash[objID][a] = null; });
+                Ext.Array.each(ancestorNames, function(a){ piHash[objID][a] = null; });
             }
 
-            if (parent && featureHash[objID]){
+            if (parent && piHash[objID]){
                 do {
                     var parentObj = hash[parent] || null,
                         parentName = hash[parent] && hash[parent]._type.replace('portfolioitem/','');
 
-                    if (featureHash[objID]){
-                        featureHash[objID][parentName] = parentObj;
+                    if (piHash[objID]){
+                        piHash[objID][parentName] = parentObj;
                         parent = parentObj && parentObj.Parent && parentObj.Parent.ObjectID || null;
                     }
                 } while (parent !== null);
@@ -178,7 +216,9 @@ Ext.define("user-story-ancestor-grid", {
         });
 
     },
-    fetchAncestors: function(featureOids){
+
+    fetchAncestors: function(piOids){
+    // this.logger.log('START fetchAncestors()');
         var deferred = Ext.create('Deft.Deferred');
 
         var promises = [];
@@ -188,19 +228,20 @@ Ext.define("user-story-ancestor-grid", {
             var filterProperties = ['ObjectID'];
 
             for (var j=0; j<i; j++){
+                // this.logger.log('line 228- inside j loop');
                 filterProperties.unshift('Children');
             }
 
             var filterProperty = filterProperties.join('.');
 
-            var filters = _.map(featureOids, function(f){
+            var filters = _.map(piOids, function(f){
                 return {
                     property: filterProperty,
                     value: f
                 }
             });
             filters = Rally.data.wsapi.Filter.or(filters);
-            this.logger.log('type', type, filters.toString());
+            // this.logger.log('type', type, filters.toString());
 
             promises.push(this.fetchWsapiRecords({
                 model: type,
@@ -225,45 +266,57 @@ Ext.define("user-story-ancestor-grid", {
 
     },
 
-    updateStories: function(store, node, records, operation){
-        this.logger.log('updateStories',records, operation);
+    updateFeatures: function(store, node, records, operation){
+        // this.logger.log('START updateFeatures(): this.piAncestorHash= ',this.piAncestorHash);
+        // this.logger.log('START updateFeatures(): ',records, operation);
 
-        if (records.length === 0 || records[0].get('_type') !== 'hierarchicalrequirement'){
-            return;
+        if (records.length === 0 || records[0].get('_type') !== 'portfolioitem/feature'){  // **** HARD CODED ****
+                return;
         }
-        var featureName = this.getFeatureName(),
-            featureHash = this.getFeatureAncestorHash(),
-            featureOids = [];
+
+        // var piName = this.getpiName(),
+        var piName = 'Parent',  // portfolio item "Parent" field
+            piHash = this.getpiAncestorHash(),  // SHOULD BE LIST OF INITIATIVES
+            piOids = [];
+            // this.logger.log('updateFeatures(): piName= ', piName, ', piHash= ', piHash);
 
         Ext.Array.each(records, function(r){
-            var feature = r.get(featureName);
-            if (feature && !featureHash[feature.ObjectID]){
-                if (!Ext.Array.contains(featureOids,feature.ObjectID)){
-                    featureOids.push(feature.ObjectID);
+            var pi = r.get(piName);
+            // this.logger.log('updateFeatures() loop: pi= ', pi);
+
+            if (pi && !piHash[pi.ObjectID]){
+                // this.logger.log('updateFeatures() inside if1: pi= ', pi.FormattedID);
+                if (!Ext.Array.contains(piOids,pi.ObjectID)){
+                    // this.logger.log('updateFeatures() inside if2: pi= ', pi.FormattedID);
+                    piOids.push(pi.ObjectID);
                 }
             }
         }, this);
-        this.logger.log('featureOids', featureOids);
+        // this.logger.log('updateFeatures(): piOids', piOids);
 
-        if (featureOids.length > 0){
-            this.fetchAncestors(featureOids).then({
+        if (piOids.length > 0){
+            this.fetchAncestors(piOids).then({
                 success: function(results){
-                    this.updateFeatureHashWithWsapiRecords(results);
+                    this.updateHashWithWsapiRecords(results);
                     this.setAncestors(records);
                 },
                 failure: this.showErrorNotification,
                 scope: this
             });
         } else {
+            // this.logger.log('updateFeatures() calling this.setAncestors with records=', records);
             this.setAncestors(records)
         }
     },
+
     _addGridboard: function(store) {
-        for (var i=1; i<this.portfolioItemTypeDefs.length; i++){
+    // this.logger.log('START _addGridboard(), store=', store);
+        for (var i=0; i<this.portfolioItemTypeDefs.length; i++){
             var name =  this.portfolioItemTypeDefs[i].Name.toLowerCase();
+            // this.logger.log('_addGridboard(): ', i, name);
             store.model.addField({name: name, type: 'auto', defaultValue: null});
         }
-        store.on('load', this.updateStories, this);
+        store.on('load', this.updateFeatures, this);
 
         this.add({
             xtype: 'rallygridboard',
@@ -283,7 +336,9 @@ Ext.define("user-story-ancestor-grid", {
             height: this.getHeight()
         });
     },
+
     getGridPlugins: function(){
+    // this.logger.log('START getGridPlugins()');
         return [{
             ptype:'rallygridboardaddnew'
         },
@@ -291,7 +346,7 @@ Ext.define("user-story-ancestor-grid", {
                 ptype: 'rallygridboardfieldpicker',
                 headerPosition: 'left',
                 modelNames: this.getModelNames(),
-                alwaysSelectedValues: [this.getFeatureName()],
+                alwaysSelectedValues: [this.getpiName()],
                 stateful: true,
                 margin: '3 3 3 25',
                 stateId: this.getContext().getScopedStateId('ancestor-columns-1')
@@ -325,11 +380,12 @@ Ext.define("user-story-ancestor-grid", {
                         text: 'Export...',
                         handler: this._export,
                         scope: this
-                    },{
+                    }
+                    /*,{
                         text: 'Export Stories and Tasks...',
                         handler: this._deepExport,
                         scope: this
-                    }
+                    } */
                 ],
                 buttonConfig: {
                     margin: 3,
@@ -337,7 +393,9 @@ Ext.define("user-story-ancestor-grid", {
                 }
             }];
     },
+
     getExportFilters: function(){
+//        this.logger.log('START getExportFilters()');
         var filters = this.getQueryFilter(),
             gridFilters = this.down('rallygridboard').currentCustomFilter.filters || [];
 
@@ -348,36 +406,40 @@ Ext.define("user-story-ancestor-grid", {
                filters = gridFilters;
             }
         }
-        this.logger.log('getExportFilters', filters.toString());
+//        this.logger.log('getExportFilters()', filters.toString());
         return filters;
     },
-    updateExportStories: function(records){
+
+    updateExportFeatures: function(records){
         var deferred = Ext.create('Deft.Deferred');
 
-        this.logger.log('updateExportStories',records);
+//        this.logger.log('START updateExportFeatures(): records = ',records);
 
-        if (records.length === 0 || records[0].get('_type') !== 'hierarchicalrequirement'){
+        if (records.length === 0 || records[0].get('_type') !== 'portfolioitem/feature'){  // **** HARD CODED ****
             deferred.resolve([]);
         }
-        var featureName = this.getFeatureName(),
-            featureHash = this.getFeatureAncestorHash(),
-            featureOids = [];
+        // var piName = this.getpiName(),
+        var piName = 'Parent',  // portfolio item "Parent" field
+            piHash = this.getpiAncestorHash(),
+            piOids = [];
 
+//        this.logger.log('line 425: piHash = ', piHash);
         Ext.Array.each(records, function(r){
-            var feature = r.get(featureName);
-            if (feature && !featureHash[feature.ObjectID]){
-                if (!Ext.Array.contains(featureOids,feature.ObjectID)){
-                    featureOids.push(feature.ObjectID);
+            var pi = r.get(piName);
+//            this.logger.log('line 428: inside loop, pi = ',pi, 'piHash[pi.ObjectID] = ', piHash[pi.ObjectID]);
+            if (pi && !piHash[pi.ObjectID]){
+                if (!Ext.Array.contains(piOids,pi.ObjectID)){
+                    piOids.push(pi.ObjectID);
                 }
 
             }
         }, this);
-        this.logger.log('featureOids', featureOids);
+//        this.logger.log('updateExportFeatures(): piOids = ', piOids);
 
-        if (featureOids.length > 0) {
-            this.fetchAncestors(featureOids).then({
+        if (piOids.length > 0) {
+            this.fetchAncestors(piOids).then({
                 success: function (results) {
-                    this.updateFeatureHashWithWsapiRecords(results);
+                    this.updateHashWithWsapiRecords(results);
                     this.setAncestors(records);
                     deferred.resolve(records);
                 },
@@ -393,10 +455,16 @@ Ext.define("user-story-ancestor-grid", {
 
         return deferred;
     },
+
+/*
     _deepExport: function(){
         this._export(true);
     },
-    _export: function(includeTasks) {
+*/
+
+// _export: function(includeTasks) {
+    _export: function() {
+//        this.logger.log('START _export()');
 
         var filters = this.getExportFilters();
 
@@ -407,36 +475,42 @@ Ext.define("user-story-ancestor-grid", {
 
         var fetch = _.pluck(additionalFields, 'dataIndex');
         fetch.push('ObjectID');
-        if (includeTasks){
+
+/*        if (includeTasks){
             fetch.push('Tasks');
-        }
-        if (!Ext.Array.contains(fetch, this.getFeatureName())){
-            fetch.push(this.getFeatureName());
+        } */
+
+        // if (!Ext.Array.contains(fetch, this.getpiName())){
+        //     fetch.push(this.getpiName());
+        if (!Ext.Array.contains(fetch, 'Parent')){
+            fetch.push('Parent');
         }
         this.setLoading('Loading data to export...');
-        this.logger.log('columns', columnCfgs);
+        // this.logger.log('columns', columnCfgs);
         this.fetchWsapiRecords({
-            model: 'HierarchicalRequirement',
+            model: 'Portfolio Item/Feature',
             fetch: fetch,
             filters: filters,
             limit: 'Infinity'
         }).then({
-            success: this.updateExportStories,
+            success: this.updateExportFeatures,
             scope: this
         }).then({
             success: function(records){
-                if (includeTasks){
+/*                if (includeTasks){
                     this._exportTasks(records, fetch, columns);
-                } else {
+                } else { */
                     var csv = this.getExportCSV(records, columns);
                     var filename = Ext.String.format("export-{0}.csv",Ext.Date.format(new Date(),"Y-m-d-h-i-s"));
                     CArABU.technicalservices.FileUtilities.saveCSVToFile(csv, filename);
-                }
+                // }
             },
             failure: this.showErrorNotification,
             scope: this
         }).always(function(){ this.setLoading(false); }, this);
     },
+
+/*
     _exportTasks: function(userStories, fetch, columns){
 
         var oids = [];
@@ -462,7 +536,7 @@ Ext.define("user-story-ancestor-grid", {
             enablePostGet: true
         }).then({
             success: function(tasks){
-                this.logger.log('exportTasks', tasks.length);
+                // this.logger.log('exportTasks', tasks.length);
                 var taskHash = {};
                 for (var j=0; j<tasks.length; j++){
                     if (!taskHash[tasks[j].get('WorkProduct').ObjectID]){
@@ -495,13 +569,15 @@ Ext.define("user-story-ancestor-grid", {
             scope: this
         });
     },
+*/
+
     getExportCSV: function(records, columns){
         var standardColumns = _.filter(columns, function(c){ return c.dataIndex || null; }),
             headers = _.map(standardColumns, function(c){ if (c.text === "ID") {return "Formatted ID"; } return c.text; }),
             fetchList = _.map(standardColumns, function(c){ return c.dataIndex; }),
             derivedColumns = this.getDerivedColumns();
 
-        this.logger.log('getExportCSV', headers, fetchList);
+//        this.logger.log('getExportCSV()', headers, fetchList);
 
         Ext.Array.each(derivedColumns, function(d){
             headers.push(d.text);
@@ -544,16 +620,17 @@ Ext.define("user-story-ancestor-grid", {
             dataIndex: 'ScheduleState',
             text: 'Schedule State'
         },{
-            dataIndex: this.getFeatureName(),
-            text: this.getFeatureName()
+            dataIndex: this.getpiName(),
+            text: this.getpiName()
         }].concat(this.getDerivedColumns());
-        this.logger.log('cols', cols);
+        // this.logger.log('cols', cols);
         return cols;
     },
+
     getDerivedColumns: function(){
         var cols = [];
         //Ext.Array.each(this.portfolioItemTypeDefs, function(p){
-        for (var i = 1; i< this.portfolioItemTypeDefs.length; i++){
+        for (var i = 0; i< this.portfolioItemTypeDefs.length; i++){
 
             var name = this.portfolioItemTypeDefs[i].TypePath.toLowerCase().replace('portfolioitem/','');
 
@@ -567,7 +644,9 @@ Ext.define("user-story-ancestor-grid", {
 
         return cols;
     },
+
     fetchWsapiRecords: function(config){
+    // this.logger.log('START fetchWsapiRecords()');
         var deferred = Ext.create('Deft.Deferred');
         Ext.create('Rally.data.wsapi.Store',config).load({
             callback: function(records, operation){
@@ -590,6 +669,7 @@ Ext.define("user-story-ancestor-grid", {
             }
         ];
     },
+
     getSettingsFields: function(){
         return [{
             xtype: 'textarea',
@@ -621,6 +701,7 @@ Ext.define("user-story-ancestor-grid", {
             }
         }];
     },
+
     _launchInfo: function() {
         if ( this.about_dialog ) { this.about_dialog.destroy(); }
         this.about_dialog = Ext.create('Rally.technicalservices.InfoLink',{});
@@ -632,7 +713,7 @@ Ext.define("user-story-ancestor-grid", {
     
     //onSettingsUpdate:  Override
     onSettingsUpdate: function (settings){
-        this.logger.log('onSettingsUpdate',settings);
+        // this.logger.log('onSettingsUpdate',settings);
         // Ext.apply(this, settings);
         this._buildGridboardStore();
     }

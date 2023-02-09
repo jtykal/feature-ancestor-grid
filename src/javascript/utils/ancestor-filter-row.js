@@ -25,7 +25,10 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
     isValid: function() {
         return this._hasPropertySelected() && this._hasOperatorSelected() && this._valueFieldIsValid();
     },
+
     _getFeatureName: function(){
+//        this.logger.log('START _getFeatureName()');
+        console.log('START _getFeatureName()');
         if (!this.featureName){
             var records = this.ancestorField && this.ancestorField.getStore() && this.ancestorField.getStore().getRange();
             Ext.Array.each(records, function(r){
@@ -35,8 +38,10 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
                 }
             }, this);
         }
+        this.logger.log('END _getFeatureName() returns ', this.featureName);
         return this.featureName;
     },
+
     getFilter: function() {
         if (this.isValid()) {
             var ancestorRecord = this.ancestorField.getRecord(),
@@ -98,6 +103,7 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
             this.propertyField.setValue(this.propertyField.getValue());
         }
     },
+
     _onTypeAncestorStoreLoad: function(store, records){
 
         var ancestor = this.name && this.name.split(".");
@@ -128,11 +134,12 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
            this.originalName = this.name;
            this.originalOperator = this.operator;
            this.originalValue = this.rawValue;
-
+this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', this.ancestorField);
            this._onAncestorSelect(this.ancestorField);
        }
 
     },
+
     _createAncestorField: function(){
 
         this.ancestorField = Ext.widget(Ext.merge({
@@ -142,11 +149,19 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
             storeConfig: {
                 model: 'TypeDefinition',
                 fetch: ['TypePath','DisplayName','Ordinal','Name'],
-                filters: [{
-                    property: 'TypePath',
-                    operator: 'contains',
-                    value: 'PortfolioItem/'
-                }],
+                filters: [
+                    {
+                        property: 'TypePath',
+                        operator: 'contains',
+                        value: 'PortfolioItem/'
+                    },
+                    {
+                        property: 'TypePath',
+                        operator: '!=',
+                        value: 'PortfolioItem/Feature'
+                    },
+                    
+                ],
                 autoLoad: true,
                 listeners: {
                     load: this._onTypeAncestorStoreLoad,
@@ -162,7 +177,8 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
             valueField: 'TypePath',
             displayField: 'Name',
             labelSeparator: '',
-            noEntryText: 'User Story',
+            //noEntryText: 'User Story',
+            noEntryText: 'Feature',
             listeners: {
                 select: this._onAncestorSelect,
                 scope: this
@@ -216,10 +232,12 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
     },
 
     _hasAncestorSelected: function() {
+        this.logger.log('START _hasAncestorSelected() value is ', !!this.ancestorField.getValue());
         return !!this.ancestorField.getValue();
     },
 
     _replacePropertyField: function() {
+        this.logger.log('START _replacePropertyField()');
         var deferred = new Deft.Deferred();
 
         this.name = this.originalName || undefined;
@@ -229,10 +247,12 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
             deferred.resolve();
         });
         this.add(this.propertyField);
+        this.logger.log('END _replacePropertyField() returns ', deferred.promise);
         return deferred.promise;
     },
 
     _replaceOperatorField: function() {
+        this.logger.log('START _replaceOperatorField()');
         var deferred = new Deft.Deferred();
         delete this.operator;
         this.operatorField.destroy();
@@ -247,10 +267,12 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
         }, this);
 
         this.add(this.operatorField);
+        this.logger.log('END _replaceOperatorField() returns ', deferred.promise);
         return deferred.promise;
     },
 
     _replaceValueField: function() {
+        this.logger.log('START _replaceValueField()');
         delete this.rawValue;
         this.rawValue = this.originalValue || undefined;
         delete this.originalValue;
@@ -258,11 +280,13 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
         this.valueField.destroy();
         this._createValueField();
         this.add(this.valueField);
+        this.logger.log('END _replaceValueField() returns ', Deft.Promise.when());
         return Deft.Promise.when();
     },
-    _onAncestorSelect: function() {
 
-        var type = this.ancestorField.getValue() || 'HierarchicalRequirement';
+    _onAncestorSelect: function() {
+    this.logger.out('START _onAncestorSelect()');
+        var type = this.ancestorField.getValue() || 'PortfolioItem/Feature';
         Rally.data.ModelFactory.getModel({
             type: type,
             success: function(model) {
@@ -292,5 +316,6 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
             },
             scope: this
         });
+        this.logger.out('END _onAncestorSelect()');
     }
 });

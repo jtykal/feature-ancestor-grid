@@ -43,6 +43,7 @@ Ext.override(Rally.ui.grid.TreeGrid, {
     }
 });
 
+/**********  Can't get this to work -- errors out selecting anything except a Feature
 Ext.override(Rally.ui.inlinefilter.AdvancedFilterRows, {
     _getRowConfig: function() {
         return Ext.merge({
@@ -63,3 +64,4 @@ Ext.override(Rally.ui.inlinefilter.AdvancedFilterRows, {
         }, this.rowConfig);
     }
 });
+**********/
