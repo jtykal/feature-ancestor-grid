@@ -2,9 +2,9 @@
 
 ![ScreenShot](/images/feature-ancestor-grid-screenshot.png)
 
-Custom List for Feartures that automatically shows all ancestors for each Feature.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
+Custom List for Features that automatically shows all ancestors for each Feature.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
 
-App Settings include a query box to filter out Features.  
+App Settings include a query box to filter out Features. Standard and Advanced filtering of Features is also available in the app itself.
 
 Grid is exportable into CSV format.  
 
