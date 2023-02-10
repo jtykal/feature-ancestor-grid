@@ -1,6 +1,6 @@
 #Feature Ancestor Grid
 
-![ScreenShot](/images/feature-ancestor-grid.png)
+![ScreenShot](/images/feature-ancestor-grid-screenshot.png)
 
 Custom List for Feartures that automatically shows all ancestors for each Feature.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
 
