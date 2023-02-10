@@ -2,13 +2,11 @@
 
 ![ScreenShot](/images/feature-ancestor-grid.png)
 
-Custom List for User Stories that automatically shows all ancestors for each user story.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
+Custom List for Feartures that automatically shows all ancestors for each Feature.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
 
-App Settings include a query box to filter out user stories.  
+App Settings include a query box to filter out Features.  
 
 Grid is exportable into CSV format.  
-
-Export Stories and Tasks... options only exports tasks for the current root stories.  It will not export child user stories and their tasks.
 
 ## Development Notes
 
@@ -111,4 +109,4 @@ Run this to watch files (js and css).  When a file is saved, the task will autom
 
 =======
 # feature-ancestor-grid
-Custom list that shows user stories and their ancestors
+Custom list that shows Features and their ancestors
