@@ -362,7 +362,7 @@ getpiAncestorHash: function(){
                             defaultFields: [
                                 'ArtifactSearch',
                                 'Owner',
-                                'ModelType'
+                                'Release'
                             ]
                         },
                         advancedFilterPanelConfig: {
