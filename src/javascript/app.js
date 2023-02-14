@@ -617,8 +617,11 @@ getpiAncestorHash: function(){
             dataIndex: 'Name',
             text: 'Name'
         },{
-            dataIndex: 'ScheduleState',
-            text: 'Schedule State'
+            dataIndex: 'State',
+            text: 'State'
+        },{
+            dataIndex: 'Release',
+            text: 'Release'
         },{
             dataIndex: this.getpiName(),
             text: this.getpiName()
