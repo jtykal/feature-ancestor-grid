@@ -346,7 +346,8 @@ getpiAncestorHash: function(){
                 ptype: 'rallygridboardfieldpicker',
                 headerPosition: 'left',
                 modelNames: this.getModelNames(),
-                alwaysSelectedValues: [this.getpiName()],
+                // alwaysSelectedValues: [this.getpiName()],  //replaced getpiName() with 'Parent' elsewhere...
+                alwaysSelectedValues: ['Parent'],  //replaced getpiName() with 'Parent' elsewhere...
                 stateful: true,
                 margin: '3 3 3 25',
                 stateId: this.getContext().getScopedStateId('ancestor-columns-1')

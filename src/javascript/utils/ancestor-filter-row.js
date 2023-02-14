@@ -26,20 +26,19 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
         return this._hasPropertySelected() && this._hasOperatorSelected() && this._valueFieldIsValid();
     },
 
-    _getFeatureName: function(){
-//        this.logger.log('START _getFeatureName()');
-        console.log('START _getFeatureName()');
-        if (!this.featureName){
+    _getpiName: function(){
+        //console.log('START _getpiName(): this.piName= ', this.piName);
+        if (!this.piName){
             var records = this.ancestorField && this.ancestorField.getStore() && this.ancestorField.getStore().getRange();
             Ext.Array.each(records, function(r){
                 if (r.get('Ordinal') === 0){
                     var typePath = r.get('TypePath');
-                    this.featureName = typePath.replace('PortfolioItem/','');
+                    this.piName = typePath.replace('PortfolioItem/','');
                 }
             }, this);
         }
-        this.logger.log('END _getFeatureName() returns ', this.featureName);
-        return this.featureName;
+        //console.log('END _getpiName() returns ', this.piName);
+        return this.piName;
     },
 
     getFilter: function() {
@@ -65,18 +64,21 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
 
             if (ancestorRecord && ancestorRecord.get('TypePath')){
                 var ordinal = ancestorRecord.get('Ordinal');
-                var propertyPrefix = [this._getFeatureName()];
-
-                if (ordinal === 0){
+                //var propertyPrefix = [this._getpiName()];
+                var propertyPrefix = ['Parent'];
+                //console.log('line 68: ordinal=',ordinal,' propertyPrefix= ',propertyPrefix);
+                if (ordinal === 1){
                     propertyPrefix.push(property);
                 } else {
-                    for (var i=0; i<ordinal; i++){
+                    for (var i=1; i<ordinal; i++){
                         propertyPrefix.push('Parent');
                     }
                     propertyPrefix.push(property);
                 }
                 property = propertyPrefix.join('.');
             }
+
+            //console.log('line 80: filter is ',property,' ',operator,' ',lastValue);
 
             var filter = Rally.data.wsapi.Filter.fromExtFilter({
                 property: property,
@@ -94,6 +96,8 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
                 filterIndex: this.filterIndex
             });
 
+            console.log('line 98: filter is ',filter);
+
             return filter;
         }
     },
@@ -105,7 +109,7 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
     },
 
     _onTypeAncestorStoreLoad: function(store, records){
-
+        //console.log('_onTypeAncestorStoreLoad(): store= ',store,'records= ',records);
         var ancestor = this.name && this.name.split(".");
         var idx = undefined,
             thisVal = null;
@@ -115,28 +119,31 @@ Ext.define('RallyTechServices.inlinefilter.AncestorFilterRow', {
         }
 
         Ext.Array.each(records, function(r){
-           if (r.get('Ordinal') === 0){
+            //console.log('line 117: r=',r);
+            if (r.get('Ordinal') === 1){
                var typePath = r.get('TypePath');
-               this.featureName = typePath.replace('PortfolioItem/','');
-           }
+               this.piName = typePath.replace('PortfolioItem/','');
+               //console.log('line 120: piName= ', this.piName);
+            }
 
             if (idx === r.get('Ordinal')){
                 thisVal = r.get('TypePath');
-                return false;
+                //console.log('line 126: thisVal=', thisVal);
+                return false;  //where does this return to?
             }
 
-       }, this);
+        }, this);
 
-       if (thisVal){
-           this.name = ancestor.slice(-1)[0];
-           this.ancestorField.setValue(thisVal);
-
-           this.originalName = this.name;
-           this.originalOperator = this.operator;
-           this.originalValue = this.rawValue;
-this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', this.ancestorField);
-           this._onAncestorSelect(this.ancestorField);
-       }
+        if (thisVal){
+            this.name = ancestor.slice(-1)[0];
+            this.ancestorField.setValue(thisVal);
+            //console.log('line 135: thisVal=',thisVal,' this.name=', this.name);
+            this.originalName = this.name;
+            this.originalOperator = this.operator;
+            this.originalValue = this.rawValue;
+            //console.log('line 139: ', this.ancestorField);
+            this._onAncestorSelect(this.ancestorField);
+        }
 
     },
 
@@ -177,7 +184,6 @@ this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', th
             valueField: 'TypePath',
             displayField: 'Name',
             labelSeparator: '',
-            //noEntryText: 'User Story',
             noEntryText: 'Feature',
             listeners: {
                 select: this._onAncestorSelect,
@@ -232,12 +238,12 @@ this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', th
     },
 
     _hasAncestorSelected: function() {
-        this.logger.log('START _hasAncestorSelected() value is ', !!this.ancestorField.getValue());
+        //console.log('START _hasAncestorSelected() value is ', this.ancestorField.getValue());
         return !!this.ancestorField.getValue();
     },
 
     _replacePropertyField: function() {
-        this.logger.log('START _replacePropertyField()');
+        //console.log('START _replacePropertyField()');
         var deferred = new Deft.Deferred();
 
         this.name = this.originalName || undefined;
@@ -247,12 +253,12 @@ this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', th
             deferred.resolve();
         });
         this.add(this.propertyField);
-        this.logger.log('END _replacePropertyField() returns ', deferred.promise);
+        //console.log('END _replacePropertyField(): ', this.propertyField);
         return deferred.promise;
     },
 
     _replaceOperatorField: function() {
-        this.logger.log('START _replaceOperatorField()');
+        //console.log('START _replaceOperatorField()');
         var deferred = new Deft.Deferred();
         delete this.operator;
         this.operatorField.destroy();
@@ -267,12 +273,12 @@ this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', th
         }, this);
 
         this.add(this.operatorField);
-        this.logger.log('END _replaceOperatorField() returns ', deferred.promise);
+        //console.log('END _replaceOperatorField(): ', this.operatorField);
         return deferred.promise;
     },
 
     _replaceValueField: function() {
-        this.logger.log('START _replaceValueField()');
+        //console.log('START _replaceValueField()');
         delete this.rawValue;
         this.rawValue = this.originalValue || undefined;
         delete this.originalValue;
@@ -280,21 +286,23 @@ this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', th
         this.valueField.destroy();
         this._createValueField();
         this.add(this.valueField);
-        this.logger.log('END _replaceValueField() returns ', Deft.Promise.when());
+        //console.log('END _replaceValueField(): ', this.valueField);
         return Deft.Promise.when();
     },
 
     _onAncestorSelect: function() {
-    this.logger.out('START _onAncestorSelect()');
+    //console.log('START _onAncestorSelect()');
         var type = this.ancestorField.getValue() || 'PortfolioItem/Feature';
+        //console.log('line 293: type= ',type);  
         Rally.data.ModelFactory.getModel({
             type: type,
             success: function(model) {
                 this.model = model;
-
+                //console.log('line 297: this.model=',this.model,' this.name= ',this.name);
                 if (this.name){
                     var names = this.name.split('.');
                     this.name = names.slice(-1)[0];
+                    //console.log('line 301: this.name= ',this.name);
                 }
 
                 Deft.Promise.all([
@@ -316,6 +324,6 @@ this.logger.log('_onTypeAncestorStoreLoad() CALLING _onAncestorSelect with ', th
             },
             scope: this
         });
-        this.logger.out('END _onAncestorSelect()');
+        //console.log('END _onAncestorSelect()');
     }
 });
