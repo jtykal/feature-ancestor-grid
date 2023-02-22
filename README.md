@@ -1,10 +1,10 @@
 #Feature Ancestor Grid
 
-![ScreenShot](/images/feature-ancestor-grid-screenshot.png)
+![ScreenShot](/images/feature-ancestor-grid.png)
 
 Custom List for Features that automatically shows all ancestors for each Feature.  Ancestors outside the current project scope are shown if the user has access to the projects that the ancestors live in.  
 
-App Settings include a query box to filter out Features. Standard and Advanced filtering of Features is also available in the app itself.
+App Settings include a query box to filter out Features. Standard and Advanced filtering is also available in the app itself. An additional feature is the ability to filter on other Portfolio Item Types by changing the selection in the OBJECT filter field.
 
 Grid is exportable into CSV format.  
 
