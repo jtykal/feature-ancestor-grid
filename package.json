@@ -29,5 +29,8 @@
       "*.json"
     ],
     "verbose": true
+  },
+  "dependencies": {
+    "@agile-central-technical-services/utils-shared-views": "^1.0.2"
   }
 }

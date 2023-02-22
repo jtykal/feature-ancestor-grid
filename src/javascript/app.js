@@ -109,7 +109,9 @@ Ext.define("feature-ancestor-grid", {
             enableHierarchy: true,
             //fetch: [this.getpiName(),'ObjectID'],
             fetch: ['Parent','ObjectID'],
-            filters: this.getQueryFilter()
+            filters: this.getQueryFilter(),
+            buffered: 'true',
+            remoteSort: 'true'
         }).then({
             success: this._addGridboard,
             failure: this.showErrorNotification,
@@ -351,6 +353,10 @@ getpiAncestorHash: function(){
                 stateful: true,
                 margin: '3 3 3 25',
                 stateId: this.getContext().getScopedStateId('ancestor-columns-1')
+            },{
+                // TRYING TO ADD SHARED VIEWS TO THIS APP -- DO WE NEED MORE THAN THIS???
+                ptype: 'rallygridboardsharedviewcontrol',
+                headerPosition: 'left'
             },{
                 ptype: 'rallygridboardinlinefiltercontrol',
                 inlineFilterButtonConfig: {
@@ -641,9 +647,12 @@ getpiAncestorHash: function(){
             cols.push({
                // dataIndex: name,
                 ancestorName: name,
+                 //sortable: 'true', <-- TRIED THIS, DID NOTHING
                 xtype: 'ancestortemplatecolumn',
                 text: this.portfolioItemTypeDefs[i].Name
             });
+            // this.logger.log('line 650: ancestorName=',name, 'text=', this.portfolioItemTypeDefs[i].Name);
+  
         }
 
         return cols;

@@ -2,12 +2,12 @@ Ext.define('CArABU.technicalservices.AncestorTemplateColumn', {
     extend: 'Ext.grid.column.Template',
     alias: ['widget.ancestortemplatecolumn'],
 
-    align: 'right',
+    align: 'left',
 
     initComponent: function(){
         var me = this;
 
-        me.tpl = new Ext.XTemplate('<tpl><div style="text-align:right;">{[this.getAncestorString(values)]}</div></tpl>',{
+        me.tpl = new Ext.XTemplate('<tpl><div style="text-align:left;">{[this.getAncestorString(values)]}</div></tpl>',{
             ancestorName: me.ancestorName,
 
             getAncestorString: function(values){
