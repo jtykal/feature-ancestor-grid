@@ -123,7 +123,7 @@ Ext.define("feature-ancestor-grid", {
         return ['portfolioitem/feature'];  // **** HARD CODED ****
     },
 
-getpiAncestorHash: function(){
+    getpiAncestorHash: function(){
     // this.logger.log('START getpiAncestorHash(): ', this.piAncestorHash);  // value is "undefined"
         if (!this.piAncestorHash){
             this.piAncestorHash = {};
@@ -335,8 +335,16 @@ getpiAncestorHash: function(){
                 columnCfgs: this.getColumnConfigs(),
                 derivedColumns: this.getDerivedColumns()
             },
-            height: this.getHeight()
+            height: this.getHeight(),
+            listeners: {
+                scope: this,
+                viewchange: this.viewChange,
+            }
         });
+    },
+
+    viewChange: function() {
+        this._buildGridboardStore();
     },
 
     getGridPlugins: function(){
@@ -356,7 +364,22 @@ getpiAncestorHash: function(){
             },{
                 // TRYING TO ADD SHARED VIEWS TO THIS APP -- DO WE NEED MORE THAN THIS???
                 ptype: 'rallygridboardsharedviewcontrol',
-                headerPosition: 'left'
+                sharedViewConfig: {
+                    enableUrlSharing: this.isFullPageApp !== false,
+                    stateful: true,
+                    stateId: this.getContext().getScopedStateId('views'),
+                    stateEvents: ['select', 'beforedestroy'],
+                    // additionalFilters: [this.piTypePlugin.getCurrentViewFilter()],
+                    suppressViewNotFoundNotification: true,
+                    emptyText: 'Select or Add Saved View...',
+                    defaultSelectionPosition: null,
+                    /*defaultViews: _.map(this._getDefaultViews(this.selectedPiTypePath), function(view) {
+                        Ext.apply(view, {
+                            Value: Ext.JSON.encode(view.Value, true)
+                        });
+                        return view;
+                    }, this), */
+                },
             },{
                 ptype: 'rallygridboardinlinefiltercontrol',
                 inlineFilterButtonConfig: {
